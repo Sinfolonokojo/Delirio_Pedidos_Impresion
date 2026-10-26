@@ -61,3 +61,7 @@ Half-and-half pizzas and beverage michelada supplements remain consultation note
 Run `npm test` (HTTP tests require loopback networking). Tests exercise menu pricing/search, performance modes, authentication, shared orders, restart persistence, invalid inputs, duplicate submission protection, concurrent changes, addition-only tickets and safe static routing.
 
 Browser checks cover customer browsing, phone/tablet/desktop layout, two independent staff sessions, ticket rendering, additions, payment, and draft recovery. The printer itself cannot be tested until its details and hardware are available.
+
+## Brand palette
+
+The interface follows the supplied `menu delirio 5.pdf`: cream `#f8ead1`, dark green `#1a3820`, and red `#ab1c18`, sampled from rendered pages 1–3. Shared palette tokens are in `dist/theme.css`; derived surface and text colors keep mobile controls legible. Kitchen printouts remain black on white. The reference PDF is used for colors only; menu items and prices have not changed.

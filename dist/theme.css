@@ -1,0 +1,19 @@
+/* DELIRIO palette sampled from menu delirio 5.pdf, pages 1–3. */
+:root{
+ --brand-cream:#f8ead1;
+ --brand-green:#1a3820;
+ --brand-red:#ab1c18;
+ --brand-red-hover:#8c1714;
+ --surface:#fff9ee;
+ --surface-soft:#f3e3c3;
+ --text:#1b2119;
+ --text-muted:#655e4e;
+ --border:#d9c9a9;
+ --success-bg:#e5ecd9;
+ --success-text:#1a3820;
+ --warning-bg:#f2dfae;
+ --warning-text:#70500e;
+ --error-bg:#f7dfd8;
+ --error-text:#8c1714;
+ color-scheme:light;
+}
