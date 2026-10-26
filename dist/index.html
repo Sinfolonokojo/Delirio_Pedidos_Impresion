@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#20221f">
+  <meta name="description" content="El menú de DELIRIO Pizzería & Restaurante. Descubre nuestras pizzas, pastas, asados y bebidas, y dale tu toque a cada antojo.">
+  <title>DELIRIO · Pizzería & Restaurante</title>
+  <link rel="icon" href="assets/logo.webp">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#menu">Ir al menú</a>
+  <header class="header">
+    <a class="brand" href="#" aria-label="Delirio, inicio"><img src="assets/logo.webp" alt="" width="56" height="52"><span>DELIRIO<small>PIZZERÍA & RESTAURANTE</small></span></a>
+    <nav class="header-nav" aria-label="Principal"><a href="#menu" class="nav-current">Nuestro menú</a><a href="assets/menu-delirio.pdf" target="_blank" rel="noopener">Carta PDF <span aria-hidden="true">↗</span></a></nav>
+
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-inner">
+        <div class="hero-copy"><p class="eyebrow"><span class="tiny-star">✳</span> BIENVENIDO A TU NUEVO ANTOJO</p><h1 id="hero-title">Un antojo.<br>Mil <em>delirios.</em></h1><p>De la primera porción al último bocado.<br>Pizzas, pastas y mucho amor por la buena comida.</p><a href="#menu" class="primary-button">Encuentra tu favorito <span aria-hidden="true">↓</span></a><div class="hero-footnote"><span class="line"></span> HECHO PARA DISFRUTAR, MEJOR PARA COMPARTIR</div></div>
+        <div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><span class="art-star star-one">✳</span><span class="art-star star-two">✳</span><div class="hero-pizza" id="hero-pizza"></div><div class="round-stamp">MUCHO<br><strong>SABOR</strong><br>MUCHO DELIRIO</div><div class="art-caption">Una porción de felicidad <span>↗</span></div></div>
+      </div>
+    </section>
+    <div class="ribbon" aria-hidden="true"><span>PIZZA, AMOR & DELIRIO</span><b>✳</b><span>EL ANTOJO ES TUYO</span><b>✳</b><span>EL SABOR ES NUESTRO</span><b>✳</b><span>PIZZA, AMOR & DELIRIO</span><b>✳</b></div>
+    <section class="menu-section" id="menu" aria-labelledby="menu-title">
+      <div class="menu-top"><div><p class="eyebrow">LA CARTA DE DELIRIO</p><h2 id="menu-title">¿Qué se te antoja hoy?</h2></div><label class="search"><span data-icon="search"></span><input id="search" type="search" placeholder="Busca tu antojo…" aria-label="Buscar en todo el menú" autocomplete="off"><span class="search-shortcut" aria-hidden="true">⌕</span></label></div>
+      <div class="menu-layout">
+        <aside class="sidebar"><nav id="categories" class="categories" aria-label="Categorías del menú"></nav><div class="sidebar-note"><img src="assets/pasta-mascot.webp" alt="" width="75" height="107" loading="lazy"><p>La felicidad<br>se comparte.<br><em>¡Y la pizza también!</em></p></div><a class="pdf-link" href="assets/menu-delirio.pdf" target="_blank" rel="noopener"><span data-icon="download"></span> Ver carta original <span>↗</span></a></aside>
+        <div class="menu-content"><div class="section-heading"><div><p class="eyebrow" id="category-eyebrow"></p><h3 id="category-title"></h3><p id="category-description"></p></div><span class="item-count" id="item-count"></span></div><div id="pizza-controls" class="pizza-controls"><div class="size-label"><span data-icon="pizza"></span><span>Elige tu tamaño<small>Los precios cambian con tu elección</small></span></div><div class="size-options" id="menu-sizes" role="group" aria-label="Tamaño de pizza"></div><p class="pizza-note"><span aria-hidden="true">✳</span> ¿Mitad y mitad? Dos sabores disponibles en mediana y grande.</p></div><div id="results" aria-live="polite" class="results"></div><div class="empty-state" id="empty-state" hidden><span data-icon="search"></span><h3>No encontramos ese antojo.</h3><p>Prueba con otro nombre o ingrediente.</p><button class="text-button" id="clear-search">Ver todo el menú →</button></div><p class="menu-disclaimer">Todos los precios están en pesos colombianos (COP).</p></div>
+      </div>
+    </section>
+    <section class="closing"><div><p class="eyebrow">LA BUENA COMIDA SE COMPARTE</p><h2>Nos vemos en <em>Delirio.</em></h2><p>¿Tienes una pregunta sobre nuestra carta?</p></div><a class="primary-button" href="tel:+573018190232"><span data-icon="phone"></span> 301 819 0232 <span>↗</span></a></section>
+  </main>
+  <footer><a class="footer-brand" href="#">DELIRIO<span>PIZZERÍA & RESTAURANTE</span></a><a href="https://www.instagram.com/delirio_resturant/" target="_blank" rel="noopener">@delirio_resturant ↗</a><span>Un antojo. Mil delirios.</span></footer>
+  <dialog id="item-dialog" class="item-dialog" aria-labelledby="detail-title"><button class="close-button" data-close aria-label="Cerrar detalles">×</button><div class="detail-visual"><div class="detail-visual-heading"><span class="eyebrow">DALE TU TOQUE</span><button class="reset-button" id="reset-extras" aria-label="Quitar todas las adiciones"><span data-icon="reset"></span> Reiniciar</button></div><div class="pizza-stage" id="pizza-stage"></div><div class="pizza-stage pasta-stage" id="pasta-stage" hidden></div><div class="non-pizza-art" id="non-pizza-art"><img data-src="assets/pizza-mascot.webp" alt="Mascota de Delirio" width="1278" height="1197" decoding="async"></div><p id="visual-caption">Toca una adición y mira cómo llega a tu pizza.</p><span class="illustration-note">Vista ilustrativa</span></div><div class="detail-content"><p class="eyebrow" id="detail-category"></p><h2 id="detail-title"></h2><p class="detail-description" id="detail-description"></p><div id="detail-size-wrap"><h3>1. Elige tu tamaño</h3><div id="detail-sizes" class="size-options" role="group" aria-label="Tamaño para tu pizza"></div><p class="detail-size-note" id="detail-size-note"></p></div><div id="pasta-choice-wrap" hidden><h3>1. Elige tu pasta</h3><div id="pasta-choices" class="pasta-choices" role="group" aria-label="Tipo de pasta"></div><p class="pasta-choice-note">Mismo sabor, dos formas de disfrutarlo. Incluye pan de la casa.</p></div><div id="extras-wrap"><div class="extras-heading"><h3>2. Un toque extra <small>Opcional</small></h3><span id="extras-count">0 adiciones</span></div><div class="extras-grid" id="extras-grid"></div></div><div id="juice-choice-wrap" hidden><label for="juice-choice">Elige tu sabor</label><select id="juice-choice"><option>Mango</option><option>Fresa</option><option>Mora</option><option>Maracumango</option></select></div><div class="detail-action"><div class="detail-total"><span>Tu antojo</span><strong id="detail-total"></strong></div><p>Cuéntale a tu camarero cómo te gustaría disfrutarlo.</p></div></div></dialog>
+  <div class="toast" role="status" id="toast"></div>
+  <noscript><div class="noscript">Activa JavaScript para explorar el menú interactivo, o <a href="assets/menu-delirio.pdf">abre la carta en PDF</a>.</div></noscript>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

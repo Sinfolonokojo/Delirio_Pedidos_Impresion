@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#233f36"><meta name="robots" content="noindex"><title>DELIRIO · Pedidos</title><link rel="icon" href="assets/logo.webp"><link rel="stylesheet" href="staff.css"></head>
+<body>
+<header class="topbar"><a class="brand" href="staff.html"><img src="assets/logo.webp" width="44" height="42" alt=""><span>DELIRIO</span></a><div class="session"><span id="connection" class="connection" role="status" hidden>Conectando…</span><span id="staff-name"></span><button id="logout" class="quiet" hidden>Salir</button></div></header>
+<main>
+<section id="login-view" class="login-card"><h1>Acceso del equipo</h1><form id="login-form"><label>Tu nombre<input id="login-name" name="name" maxlength="60" autocomplete="given-name" placeholder="Ej. Ana" required></label><label>Código del equipo<input id="login-pin" name="pin" type="password" maxlength="128" autocomplete="current-password" required placeholder="Código de acceso"></label><button class="primary">Entrar a pedidos <span>→</span></button></form><p id="login-error" role="alert"></p><a class="muted" href="/">Ver el menú de clientes ↗</a></section>
+<div id="workspace" hidden>
+<h1 class="sr-only">Pedidos</h1>
+<nav class="tabs" aria-label="Pedidos"><button data-view="new" aria-pressed="true">Nuevo</button><button data-view="pending" aria-pressed="false">Pendientes <span id="pending-count">0</span></button><button data-view="paid" aria-pressed="false">Pagados</button><button data-view="cancelled" aria-pressed="false">Cancelados</button></nav>
+<p id="message" class="message" role="status" hidden></p>
+<section id="new-view" class="order-layout">
+<div class="order-context"><label>Mesa<input id="table" maxlength="30" placeholder="Ej. 7 o Terraza 2" required></label></div>
+<div class="catalog"><label class="search-label"><span class="sr-only">Buscar platos</span><input id="food-search" type="search" placeholder="Buscar plato o ingrediente…" autocomplete="off"></label><div id="food-categories" class="category-tabs" role="group" aria-label="Categorías"></div><div id="food-list" class="food-grid"></div></div>
+<aside class="draft"><div class="draft-title"><h2 id="draft-title">Pedido</h2><button id="clear-draft" class="quiet">Limpiar</button></div><label id="order-notes-label">Notas para cocina <span class="optional">Opcional</span><textarea id="order-notes" maxlength="500" rows="2" placeholder="Ej. Servir las entradas primero"></textarea></label><div id="draft-lines"></div><div class="draft-total"><span id="total-label">Total del pedido</span><strong id="draft-total">$0</strong></div><p id="base-total" class="muted" hidden></p><button class="primary" id="save-order" disabled>Guardar e imprimir <span>↗</span></button><p class="print-hint">Vista previa · Impresora sin conectar.</p><a id="last-ticket" class="ticket-link" hidden target="_blank" rel="noopener">Abrir última comanda ↗</a></aside>
+</section>
+<section id="orders-view" hidden><div class="list-heading"><h2 id="list-title" class="sr-only">Pedidos pendientes</h2><button class="secondary" id="refresh-orders">Actualizar ↻</button></div><div id="orders-list" class="orders-grid"></div></section>
+</div></main>
+<dialog id="food-dialog" aria-labelledby="food-title"><form id="food-form"><div class="dialog-top"><button type="button" class="close" data-close aria-label="Cerrar">×</button></div><h2 id="food-title"></h2><p id="food-description" class="muted"></p><div id="food-options"></div><label>Cantidad<input id="food-quantity" type="number" min="1" max="99" value="1" required></label><label>Notas del plato <span class="optional">Opcional</span><textarea id="food-notes" rows="2" maxlength="300" placeholder="Ej. Sin cebolla"></textarea></label><button class="primary" id="add-food">Agregar · <span id="food-price"></span></button></form></dialog>
+<dialog id="order-dialog" aria-labelledby="saved-title"><div class="dialog-top"><span class="eyebrow" id="saved-number"></span><button class="close" data-close aria-label="Cerrar">×</button></div><h2 id="saved-title"></h2><div id="saved-content"></div></dialog>
+<footer class="staff-footer"><a href="/" target="_blank" rel="noopener">Menú de clientes ↗</a></footer>
+<button id="mobile-summary" class="mobile-summary" hidden>Ver pedido <span id="mobile-total"></span> ↓</button>
+<script type="module" src="staff.js"></script></body></html>
