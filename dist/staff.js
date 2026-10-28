@@ -1,10 +1,10 @@
 import {items,categories,sizes,priceFor,currency,normalize} from './menu.js';
-import {escapeHTML as e,lineDetails,requestId} from './staff-utils.js';
+import {escapeHTML as e,lineDetails,requestId,deliveryLabel,orderDelivery} from './staff-utils.js';
 const $=s=>document.querySelector(s);
 const item=id=>items.find(x=>x.id===id);
 const extras=items.filter(x=>x.category==='adiciones'&&!x.name.includes('papas'));
 const labels={pending:'Pendiente',paid:'Pagado',cancelled:'Cancelado'};
-let user='',orders=[],view='new',category='pizzas',selected=null,activeOrder=null,busy=false,polling=false,saveActionVisible=false;
+let user='',orders=[],view='new',category='pizzas',selected=null,activeOrder=null,busy=false,polling=false,saveActionVisible=false,printer='not_configured';
 let draft={lines:[],table:'',notes:'',target:null,submission:null};
 try{const saved=JSON.parse(sessionStorage.getItem('delirio-staff-draft'));if(saved&&Array.isArray(saved.lines)&&saved.lines.every(l=>item(l.itemId)&&Number.isInteger(l.quantity)&&l.quantity>0&&l.quantity<=99&&Array.isArray(l.extras)&&l.extras.every(id=>extras.some(x=>x.id===id))))draft={...draft,...saved};}catch{}
 function persist(){try{sessionStorage.setItem('delirio-staff-draft',JSON.stringify(draft));}catch{}}
@@ -54,7 +54,8 @@ function renderDraft(){
  $('#draft-title').textContent=draft.target?`Adiciones · #${draft.target.number}`:'Pedido';
  $('#draft-lines').innerHTML=draft.lines.length?draft.lines.map((line,i)=>`<div class="draft-line"><div><strong>${line.quantity} × ${e(item(line.itemId).name)}</strong><p>${e(details(line))}${line.notes?`<br>${e(line.notes)}`:''}</p></div><strong>${currency(subtotal(line))}</strong><div class="line-controls"><button data-quantity="${i}" data-delta="-1" ${locked?'disabled':''} aria-label="Quitar una unidad de ${e(item(line.itemId).name)}">−</button><span>${line.quantity}</span><button data-quantity="${i}" data-delta="1" ${locked||line.quantity>=99?'disabled':''} aria-label="Agregar una unidad de ${e(item(line.itemId).name)}">+</button><button class="remove" data-remove="${i}" ${locked?'disabled':''}>Quitar</button></div></div>`).join(''):'<p class="empty">Selecciona un plato para empezar.</p>';
  const total=draft.lines.reduce((s,l)=>s+subtotal(l),0);$('#draft-total').textContent=currency(total);$('#total-label').textContent=draft.target?'Adiciones (COP)':'Total (COP)';$('#base-total').hidden=!draft.target;$('#base-total').textContent=draft.target?`Total de la mesa con estas adiciones: ${currency(draft.target.total+total)}`:'';
- $('#save-order').disabled=busy||!draft.lines.length||!draft.table.trim();$('#save-order').innerHTML=busy?'Guardando…':locked?'Reintentar el mismo envío ↻':draft.target?'Guardar e imprimir adiciones ↗':'Guardar e imprimir ↗';$('#clear-draft').disabled=busy||locked;
+ $('#save-order').disabled=busy||!draft.lines.length||!draft.table.trim();$('#save-order').textContent=busy?'Guardando…':locked?'Reintentar el mismo envío ↻':printer==='configured'?'Guardar y enviar a cocina':'Guardar pedido';$('#clear-draft').disabled=busy||locked;
+ $('#printer-hint').textContent=printer==='configured'?'Envío automático por LAN.':'Impresora pendiente de configurar.';
  $('#draft-lines').querySelectorAll('[data-quantity]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.quantity);draft.lines[i].quantity+=Number(b.dataset.delta);if(!draft.lines[i].quantity)draft.lines.splice(i,1);persist();renderDraft();});
  $('#draft-lines').querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{draft.lines.splice(Number(b.dataset.remove),1);persist();renderDraft();});
 }
@@ -64,13 +65,13 @@ $('#clear-draft').onclick=()=>{if(draft.lines.length&&!confirm('¿Limpiar esta s
 $('#save-order').onclick=async()=>{
  if(busy||!draft.lines.length||!draft.table.trim())return;
  if(draft.submission&&draft.submission.staff!==user){message(`Vuelve a ingresar como ${draft.submission.staff} para recuperar este envío.`,true);return;}
- const preview=window.open('ticket.html','_blank');if(preview)preview.opener=null;
+ const preview=printer==='configured'?null:window.open('ticket.html','_blank');if(preview)preview.opener=null;
  if(!draft.submission){draft.submission={staff:user,path:draft.target?`/api/orders/${draft.target.id}/add`:'/api/orders',body:{requestId:requestId(),...(draft.target?{version:draft.target.version}:{table:draft.table,notes:draft.notes}),lines:draft.lines.map(l=>({...l}))}};persist();}
  busy=true;renderDraft();renderFoods();message('Guardando el pedido…');
  try{
   const result=await api(draft.submission.path,draft.submission.body);const link=`ticket.html?id=${encodeURIComponent(result.ticket.id)}`;
   $('#last-ticket').href=link;$('#last-ticket').hidden=false;if(preview)preview.location.replace(link);
-  draft={lines:[],table:'',notes:'',target:null,submission:null};persist();message(`Pedido #${result.order.number} guardado · Pendiente.`);await refresh();
+  draft={lines:[],table:'',notes:'',target:null,submission:null};persist();message(`Pedido #${result.order.number} guardado${printer==='configured'?' · Consulta el envío en Pendientes.':'.'}`);if(printer==='configured')switchView('pending');await refresh();
  }catch(error){
   if(preview)preview.close();
   if([400,403,409,413,415].includes(error.status)){
@@ -83,7 +84,7 @@ $('#save-order').onclick=async()=>{
 };
 async function refresh(){
  if(polling||$('#workspace').hidden)return;polling=true;
- try{const result=await api('/api/orders');orders=result.orders;$('#pending-count').textContent=orders.filter(o=>o.status==='pending').length;$('#connection').textContent='Conectado';$('#connection').classList.remove('offline');renderOrders();}
+ try{const result=await api('/api/orders');orders=result.orders;if(printer!==result.printer){printer=result.printer;renderDraft();}$('#pending-count').textContent=orders.filter(o=>o.status==='pending').length;$('#connection').textContent='Conectado';$('#connection').classList.remove('offline');renderOrders();if($('#order-dialog').open&&!busy){const fresh=orders.find(o=>o.id===activeOrder?.id);if(fresh&&JSON.stringify(fresh)!==JSON.stringify(activeOrder)){activeOrder=fresh;renderSaved();}}}
  catch(error){$('#connection').textContent='Sin sincronizar';$('#connection').classList.add('offline');if(view!=='new')message(error.message,true);}
  finally{polling=false;}
 }
@@ -93,13 +94,13 @@ function renderOrders(){
  const emptyMessages={pending:'Sin pedidos pendientes.',paid:'Sin pedidos pagados.',cancelled:'Sin pedidos cancelados.'};
  $('#list-title').textContent=`Pedidos ${labels[view].toLowerCase()}s`;
  const list=orders.filter(o=>o.status===view);
- $('#orders-list').innerHTML=list.length?list.map(o=>`<article class="order-card"><div class="order-head"><span>PEDIDO #${o.number}</span><span class="badge ${o.status}">${labels[o.status]}</span></div><h3>Mesa ${e(o.table)}</h3><p class="order-meta">${e(o.staff)} · ${new Date(o.createdAt).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',timeZone:'America/Bogota'})}<br>${o.lines.reduce((s,l)=>s+l.quantity,0)} ${o.lines.reduce((s,l)=>s+l.quantity,0)===1?'plato':'platos'} · ${o.ticketIds.length} ${o.ticketIds.length===1?'comanda':'comandas'}</p><div class="order-foot"><strong>${currency(o.total)}</strong><button class="secondary" data-order="${o.id}">Ver pedido →</button></div></article>`).join(''):`<p class="empty">${emptyMessages[view]}</p>`;
+ $('#orders-list').innerHTML=list.length?list.map(o=>`<article class="order-card"><div class="order-head"><span>PEDIDO #${o.number}</span><span class="badge ${o.status}">${labels[o.status]}</span></div><h3>Mesa ${e(o.table)}</h3><p class="order-meta">${e(o.staff)} · ${new Date(o.createdAt).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',timeZone:'America/Bogota'})}<br>${o.lines.reduce((s,l)=>s+l.quantity,0)} ${o.lines.reduce((s,l)=>s+l.quantity,0)===1?'plato':'platos'} · ${o.ticketIds.length} ${o.ticketIds.length===1?'comanda':'comandas'}</p><p class="delivery ${orderDelivery(o.tickets)}">Cocina: ${deliveryLabel(orderDelivery(o.tickets))}</p><div class="order-foot"><strong>${currency(o.total)}</strong><button class="secondary" data-order="${o.id}">Ver pedido →</button></div></article>`).join(''):`<p class="empty">${emptyMessages[view]}</p>`;
  $('#orders-list').querySelectorAll('[data-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.order));
 }
 async function openOrder(id){try{const result=await api(`/api/orders/${id}`);activeOrder=result.order;renderSaved();if(!$('#order-dialog').open)$('#order-dialog').showModal();}catch(error){message(error.message,true);}}
 function renderSaved(){
  const o=activeOrder;$('#saved-number').textContent=`PEDIDO #${o.number} · ${labels[o.status].toUpperCase()}`;$('#saved-title').textContent=`Mesa ${o.table}`;
- $('#saved-content').innerHTML=`<p class="muted">Atendió: ${e(o.staff)}</p>${o.notes?`<p>${e(o.notes)}</p>`:''}<ul class="saved-lines">${o.lines.map(l=>`<li><strong>${l.quantity} × ${e(l.name)} · ${currency(l.total)}</strong><p>${e(lineDetails(l))}</p>${l.notes?`<p>${e(l.notes)}</p>`:''}</li>`).join('')}</ul><div class="draft-total"><span>Total de la mesa</span><strong>${currency(o.total)}</strong></div><div class="ticket-history">${o.ticketIds.map((id,i)=>`<a href="ticket.html?id=${id}&copy=1" target="_blank" rel="noopener">Ver / reimprimir ${i?'adición '+i:'comanda inicial'} ↗</a>`).join('')}</div><p class="print-hint">Vista previa · Impresora sin conectar.</p>${o.status==='pending'?'<div class="saved-actions"><button id="append-order" class="secondary">+ Agregar platos</button><button id="pay-order" class="primary">Marcar como pagado ✓</button><button id="cancel-order" class="danger">Cancelar pedido</button></div>':''}`;
+ $('#saved-content').innerHTML=`<p class="muted">Atendió: ${e(o.staff)}</p>${o.notes?`<p>${e(o.notes)}</p>`:''}<ul class="saved-lines">${o.lines.map(l=>`<li><strong>${l.quantity} × ${e(l.name)} · ${currency(l.total)}</strong><p>${e(lineDetails(l))}</p>${l.notes?`<p>${e(l.notes)}</p>`:''}</li>`).join('')}</ul><div class="draft-total"><span>Total de la mesa</span><strong>${currency(o.total)}</strong></div><div class="ticket-history">${o.ticketIds.map((id,i)=>`<a href="ticket.html?id=${id}&copy=1" target="_blank" rel="noopener">${i?'Adición '+i:'Comanda inicial'} · ${deliveryLabel(o.tickets?.find(t=>t.id===id)?.delivery)} ↗</a>`).join('')}</div>${o.status==='pending'?'<div class="saved-actions"><button id="append-order" class="secondary">+ Agregar platos</button><button id="pay-order" class="primary">Marcar como pagado ✓</button><button id="cancel-order" class="danger">Cancelar pedido</button></div>':''}`;
  $('#append-order')?.addEventListener('click',()=>{
   if(draft.submission){$('#order-dialog').close();message('Resuelve el envío pendiente antes de empezar otro.',true);switchView('new');return;}
   if(draft.lines.length&&!confirm('¿Reemplazar la selección que aún no has enviado?'))return;

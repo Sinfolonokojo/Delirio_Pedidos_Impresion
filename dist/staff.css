@@ -12,3 +12,5 @@ main{padding-top:20px}.topbar{height:68px}.brand{font-size:21px}.connection{font
 .brand,h1,h2,h3{color:var(--brand-green)}
 .tabs button[aria-pressed=true]{color:var(--brand-green);border-color:var(--brand-red)}
 .category-tabs button[aria-pressed=true]{background:var(--brand-green);border-color:var(--brand-green);color:var(--surface)}
+
+.delivery{font-size:13px;margin:8px 0;color:var(--brand-green)}.delivery.failed,.delivery.uncertain{color:var(--brand-red);font-weight:700}

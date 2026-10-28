@@ -4,12 +4,15 @@ import {resolve,extname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {randomBytes,timingSafeEqual} from 'node:crypto';
 import {createStore,fail} from './store.js';
+import {printerConfig,createPrintQueue} from './printer.js';
 const root=resolve(fileURLToPath(new URL('../dist/',import.meta.url)));
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.webp':'image/webp','.woff2':'font/woff2','.pdf':'application/pdf'};
 const digest=value=>Buffer.from(String(value));
-export function createApp({dbPath,pin,secureCookies=false,publicOrigin}={}){
+export function createApp({dbPath,pin,secureCookies=false,publicOrigin,printer}={}){
  if(typeof pin!=='string'||pin.length<6)throw new Error('Set STAFF_PIN to an access code of at least 6 characters.');
- const store=createStore(dbPath||':memory:');const sessions=new Map(),attempts=new Map();
+ const config=printerConfig(printer),printerState=config?'configured':'not_configured';
+ const store=createStore(dbPath||':memory:',{printingEnabled:!!config});const queue=createPrintQueue(store,config);
+ const sessions=new Map(),attempts=new Map();
  const cookie=(token,age)=>`delirio_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${age}${secureCookies?'; Secure':''}`;
  const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
  async function body(req){
@@ -42,15 +45,19 @@ export function createApp({dbPath,pin,secureCookies=false,publicOrigin}={}){
      res.setHeader('Set-Cookie',cookie(token,43200));return send(res,200,{name:input.name.trim()});
     }
     const user=session(req);
-    if(path==='/api/session'&&req.method==='GET')return send(res,200,{name:user.name,printer:'not_configured'});
+    if(path==='/api/session'&&req.method==='GET')return send(res,200,{name:user.name,printer:printerState});
     if(path==='/api/logout'&&req.method==='POST'){sessions.delete(user.token);res.setHeader('Set-Cookie',cookie('',0));return send(res,200,{ok:true});}
     if(path==='/api/orders'){
-     if(req.method==='GET')return send(res,200,{orders:store.list(),printer:'not_configured'});
-     return send(res,201,store.create(await body(req),user.name));
+     if(req.method==='GET')return send(res,200,{orders:store.list(),printer:printerState});
+     const result=store.create(await body(req),user.name);send(res,201,result);queue.kick();return;
     }
     let match=path.match(/^\/api\/orders\/([\w-]+)(?:\/(add|status))?$/);
-    if(match){if(!match[2]&&req.method==='GET')return send(res,200,{order:store.get(match[1])});if(match[2]&&req.method==='POST')return send(res,200,store[match[2]](match[1],await body(req),user.name));}
-    match=path.match(/^\/api\/tickets\/([\w-]+)$/);if(match&&req.method==='GET')return send(res,200,{ticket:store.getTicket(match[1])});
+    if(match){if(!match[2]&&req.method==='GET')return send(res,200,{order:store.get(match[1])});if(match[2]&&req.method==='POST'){const result=store[match[2]](match[1],await body(req),user.name);send(res,200,result);queue.kick();return;}}
+    match=path.match(/^\/api\/tickets\/([\w-]+)(?:\/(print))?$/);
+    if(match){
+     if(!match[2]&&req.method==='GET'){const ticket=store.getTicket(match[1]);return send(res,200,{ticket,printer:printerState,orderStatus:store.get(ticket.orderId).status});}
+     if(match[2]&&req.method==='POST'){const result=store.enqueuePrint(match[1],await body(req),user.name);send(res,202,result);queue.kick();return;}
+    }
     fail(404,'Ruta no encontrada.');
    }
    if(!['GET','HEAD'].includes(req.method))fail(405,'Método no permitido.');
@@ -61,5 +68,5 @@ export function createApp({dbPath,pin,secureCookies=false,publicOrigin}={}){
   }catch(error){if(!error.status)console.error(error);if(!res.headersSent)send(res,error.status||500,{error:error.status?error.message:'No se pudo guardar. Conserva el pedido e intenta de nuevo.'});else res.end();}
  });
  const cleanup=setInterval(()=>{const now=Date.now();for(const [key,s] of sessions)if(s.expires<now)sessions.delete(key);for(const [key,a] of attempts)if(a.until<now)attempts.delete(key);},60000);cleanup.unref();
- return {server,close:async()=>{clearInterval(cleanup);await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve()));store.close();}};
+ return {server,close:async()=>{clearInterval(cleanup);await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve()));await queue.close();store.close();}};
 }
